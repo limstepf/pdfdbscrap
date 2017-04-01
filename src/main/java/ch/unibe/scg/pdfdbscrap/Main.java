@@ -67,7 +67,7 @@ public class Main {
 				"o", "out"
 		);
 		final CommandLineArguments.Argument modeArg = cla.add(
-				"The scraping mode.",
+				"The scrap(ing) mode.",
 				"<string> (" + getValueList(ScrapMode.class) + "; DEFAULT=" + DEFAULT_SCRAPMODE.name() + ")",
 				"m", "mode"
 		);
