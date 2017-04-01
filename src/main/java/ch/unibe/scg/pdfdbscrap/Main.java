@@ -94,6 +94,11 @@ public class Main {
 				"<string> (" + getValueList(Browser.class) + "; DEFAULT=" + DEFAULT_BROWSER.name() + ")",
 				"b", "browser"
 		);
+		final CommandLineArguments.Argument partitionArg = cla.add(
+				"Partitions the given BibTeX file into multiple BibTeX files; one for each known/unkown database.",
+				"",
+				"p", "partition"
+		);
 		final CommandLineArguments.Argument usageArg = cla.add(
 				"Print the usage of this program.",
 				"",
@@ -121,6 +126,12 @@ public class Main {
 			outputDirectory.mkdirs();
 		} else {
 			System.out.println("output directory: " + outputDirectory);
+		}
+
+		if (partitionArg.isSet()) {
+			System.out.print("\n");
+			partitionFileByDatabase(inputFile, outputDirectory);
+			kthxbai();
 		}
 
 		final ScrapMode scrapMode;
@@ -441,6 +452,12 @@ public class Main {
 		return filename.substring(0, n) + "-" + status.name() + ".bib";
 	}
 
+	public static String getBibTeXFilename(File file, PDFDatabase db) {
+		final String filename = file.getName();
+		final int n = filename.lastIndexOf('.');
+		return filename.substring(0, n) + "-" + db.name() + ".bib";
+	}
+
 	public static void putResult(ScrapStatus status, String identifier, BibTeXEntry entry, List<List<BibTeXEntry>> results, File outputDirectory) {
 		System.out.println("  " + status.name());
 		System.out.print("\n");
@@ -582,6 +599,62 @@ public class Main {
 		System.out.println("isThrowExceptionOnScriptError: " + clientOptions.isThrowExceptionOnScriptError());
 		System.out.println("isUseInsecureSSL: " + clientOptions.isUseInsecureSSL());
 		System.out.print("\n");
+	}
+
+	public static void partitionFileByDatabase(File inputFile, File outputDirectory) {
+		try (FileReader reader = new FileReader(inputFile)) {
+			final BibTeXParser bibtexParser = new BibTeXParser();
+			final BibTeXDatabase database = bibtexParser.parse(reader);
+			final int n = database.getEntries().size();
+			final Map<org.jbibtex.Key, BibTeXEntry> entryMap = database.getEntries();
+
+			final int m = PDFDatabase.values().length;
+			final BibTeXDatabase[] partitions = new BibTeXDatabase[m];
+			for (int i = 0; i < m; i++) {
+				partitions[i] = new BibTeXDatabase();
+			}
+
+			int i = 0;
+			for (BibTeXEntry e : entryMap.values()) {
+				i++;
+				final org.jbibtex.Key keyValue = e.getKey();
+				final String key = (keyValue == null) ? "" : keyValue.toString();
+				System.out.print(String.format(
+						"processing entry %-32s (%d/%d): ",
+						(key.length() > 32) ? key.substring(0, 32) : key,
+						i,
+						n
+				));
+				final org.jbibtex.Value urlValue = e.getField(BibTeXEntry.KEY_URL);
+				final String url = (urlValue == null) ? "" : urlValue.toUserString();
+				final PDFDatabase db = url.isEmpty() ? PDFDatabase.UNKNOWN : PDFDatabase.getPDFDatabase(url);
+				System.out.print(String.format(" %s\n", db.name()));
+				partitions[db.ordinal()].addObject(e);
+			}
+			System.out.print("\n");
+
+			for (int j = 0; j < m; j++) {
+				final BibTeXDatabase partition = partitions[j];
+				final PDFDatabase db = PDFDatabase.values()[j];
+				if (!partition.getEntries().isEmpty()) {
+					final String filename = getBibTeXFilename(inputFile, db);
+					final File file = new File(
+							outputDirectory.getAbsolutePath(),
+							filename
+					);
+					System.out.println(String.format(
+							"writing %s-partition with %d BibTeX entries to:\n  %s...",
+							db.name(),
+							partition.getEntries().size(),
+							file
+					));
+					writeBibTeXDatabase(partition, file);
+				}
+			}
+
+		} catch (IOException | ParseException | TokenMgrException ex) {
+			printError(ex, "ERROR: failed to parse the BibTeX file: " + inputFile);
+		}
 	}
 
 }

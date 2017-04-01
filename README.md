@@ -29,7 +29,7 @@ The basic use case of this tool is to download all PDF files corresponding to th
 5. Sanitize the BibTeX file (optional):
   - Find and prune duplicates (e.g. with [JabRef](http://www.jabref.org/))
   - Prune incomplete entries, especially ones without `author` field. Those tend to be of the sort of: "copyright notice", "front cover", "program committee", "title page", "author index", ... anyways. The false-positive rate is next to zero. Again JabRef might help with this.
-6. If multiple BibTeX files from different databases have been merged in step 4, you might want to consider to split the file back up again in order to have one BibTeX file per database. This allows you to scrap them in parallel. The `--number` option can be used to still end up with a proper numbering/filenames.
+6. If multiple BibTeX files from different databases have been merged in step 4, you might want to consider to split the file back up again in order to have one BibTeX file per database. This allows you to scrap them in parallel. The `--partition` option does just that for you. The `--number` option can be used to still end up with a proper numbering/filenames.
 7. **Scrap the PDF files**, following the `url` field of each BibTeX entry
 8. Retry later and continue the scrap(ing) since you just got fucking blocked again. The `--range` option (can be combined with the `--number` option) might come in handy here to restart the process from a certain BibTeX entry.
 
@@ -107,6 +107,9 @@ $ java -jar pdfdbscrap-1.0.0-SNAPSHOT.jar <options>
 -b, --browser <string> (BEST_SUPPORTED, CHROME, EDGE, FIREFOX, or IE; DEFAULT=CHROME)
     The browser (version) of the headless web client.
 
+-p, --partition
+    Partitions the given BibTeX file into multiple BibTeX files; one for each known/unkown database.
+
 -u, --usage
     Print the usage of this program.
 ```
@@ -125,7 +128,48 @@ log=${out}/pdfdbscrap.log
 java -jar ${app} --file ${file} --out ${out} | tee ${log}
 ```
 
-In case you need to continue the scrap(ing), you can use either the `--range` option to start the scrap(ing) from a certain entry (a starting offset, with unspecified rang end, is just fine. Entries are counted from `1` to `n`):
+In case you've merged the BibTeX entries of multiple search results into a single file, you might want to split it back up again using the `--partition` option, s.t. you can scrap each database individually (and maybe in parallel). The following example:
+
+```bash
+#!/bin/bash
+app=./pdfdbscrap.git/target/pdfdbscrap-1.0.0-SNAPSHOT.jar
+file=./merged.bib
+out=./
+
+java -jar ${app} --file ${file} --out ${out} --partition
+```
+
+...will create new BibTeX files; one for each known (and unknown) database:
+
+```
+...
+processing entry Gomes:2007:EIP:1330598.1330691   (173/1189):  ACM
+processing entry Lungu:2006:SCE:1148493.1148533   (174/1189):  ACM
+processing entry Burnett:2006:1148493             (175/1189):  UNKNOWN
+processing entry Hundhausen:2008:1409720          (176/1189):  UNKNOWN
+processing entry Baloian:2005:AVU:1056018.1056020 (177/1189):  ACM...
+...
+processing entry Visser2005831                    (1186/1189):  SCIENCEDIRECT
+processing entry Corbett1997849                   (1187/1189):  SCIENCEDIRECT
+processing entry Malczewski20043                  (1188/1189):  SCIENCEDIRECT
+processing entry Deek2000223                      (1189/1189):  SCIENCEDIRECT
+
+writing ACM-partition with 350 BibTeX entries to:
+  .\merged-ACM.bib...
+writing DOI-partition with 2 BibTeX entries to:
+  .\merged-DOI.bib...
+writing IEEE-partition with 427 BibTeX entries to:
+  .\merged-IEEE.bib...
+writing SCIENCEDIRECT-partition with 402 BibTeX entries to:
+  .\merged-SCIENCEDIRECT.bib...
+writing UNKNOWN-partition with 8 BibTeX entries to:
+  .\merged-UNKNOWN.bib...
+
+kthxbai.
+```
+
+
+In case you need to continue the scrap(ing), you can use the `--range` option to start the scrap(ing) from a certain entry (a starting offset, with unspecified rang end, is just fine. Entries are counted from `1` to `n`):
 
 ```bash
 #!/bin/bash
@@ -140,7 +184,7 @@ java -jar ${app} --file ${file} --range ${range} --out ${out} | tee ${log}
 
 The above will scrap entries `179` to `n`. But you might as well specify a full range as in: `179-350` to scrap entries 179 to 350 (all inclusive).
 
-The number of an entry is nice to use as `IDCreator` (used for filenames of produced PDF and BibTeX files), so sometimes you just might want to offset that number while still processing/scraping all the entries in some BibTeX file:
+The number of an entry is nice to use as `IDCreator` (used for filenames of produced PDF and BibTeX files), so sometimes you just might want to offset that number while still processing/scraping all the entries in some BibTeX file. Just use the `--number` option as in:
 
 ```bash
 #!/bin/bash
