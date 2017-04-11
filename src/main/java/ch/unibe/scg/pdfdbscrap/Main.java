@@ -530,12 +530,12 @@ public class Main {
 			} catch (IOException ex) {
 				System.err.println("ERROR: failed to write to output stream");
 				ex.printStackTrace(System.err);
-				return ScrapStatus.FAILURE_OUTPUTSTREAM_IO;
+				return ScrapStatus.FAILURE_IO_OUTPUTSTREAM;
 			}
 		} catch (IOException ex) {
 			System.err.println("ERROR: failed to read from input stream");
 			ex.printStackTrace(System.err);
-			return ScrapStatus.FAILURE_INPUTSTREAM_IO;
+			return ScrapStatus.FAILURE_IO_INPUTSTREAM;
 		}
 	}
 

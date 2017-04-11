@@ -9,8 +9,8 @@ There are many reasons scrap(ing) could fail. Depending on the outcome, `pdfdbsc
 * `FAILURE_URL_TO_PDF_NOTFOUND`
 * `FAILURE_INVALID_URL_TO_PDF`
 * `FAILURE_FAILING_HTTP_STATUS_CODE`
-* `FAILURE_INPUTSTREAM_IO`
-* `FAILURE_OUTPUTSTREAM_IO`
+* `FAILURE_IO_INPUTSTREAM`
+* `FAILURE_IO_OUTPUTSTREAM`
 * `SUCCESS`
 
 Each processed BibTeX entry will be saved individually in his own BibTeX file, and placed in the corresponding `ScrapStatus` directory. If that file just happens to be in the `SUCCESS` directory, it will be accompanied by the scraped PDF file. Both files are named according to the specified `IDCreator` (or ID method).

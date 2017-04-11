@@ -33,11 +33,11 @@ public enum ScrapStatus {
 	/**
 	 * Input stream IO exception.
 	 */
-	FAILURE_INPUTSTREAM_IO,
+	FAILURE_IO_INPUTSTREAM,
 	/**
 	 * Output stream IO exception.
 	 */
-	FAILURE_OUTPUTSTREAM_IO,
+	FAILURE_IO_OUTPUTSTREAM,
 	/**
 	 * Success. Yay.
 	 */
